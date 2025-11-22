@@ -273,5 +273,3 @@ searchsploit "linux kernel $(uname -r)"
 - [GTFOBins](https://gtfobins.github.io/) - SUID/sudo exploitation
 - [HackTricks](https://book.hacktricks.xyz/linux-hardening/privilege-escalation) - Comprehensive guide
 - [LinPEAS](https://github.com/carlospolop/PEASS-ng) - Best enum script
-
-That's the playbook. Happy hunting.
