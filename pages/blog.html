@@ -1,0 +1,32 @@
+---
+layout: default
+title: Blog
+permalink: /blog/
+---
+
+<section class="page-header">
+    <h1 class="page-title">Technical Blog</h1>
+    <p class="page-subtitle">Deep dives into tools, techniques, and methodologies</p>
+</section>
+
+<div class="blog-list">
+    {% for post in site.blog reversed %}
+    <article class="blog-item">
+        <a href="{{ post.url | relative_url }}" class="blog-link">
+            <div class="blog-meta">
+                <span class="blog-date">{{ post.date | date: "%b %d, %Y" }}</span>
+                {% if post.readTime %}
+                <span class="blog-time">{{ post.readTime }}</span>
+                {% endif %}
+            </div>
+            <h2 class="blog-title">{{ post.title }}</h2>
+            <p class="blog-excerpt">{{ post.excerpt | strip_html }}</p>
+            <div class="blog-tags">
+                {% for tag in post.tags limit:3 %}
+                <span class="blog-tag">#{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </a>
+    </article>
+    {% endfor %}
+</div>

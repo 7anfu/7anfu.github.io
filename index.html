@@ -1,0 +1,41 @@
+---
+layout: default
+title: Home
+---
+
+<section class="hero">
+    <h1 class="hero-title">Hey, I'm anfu 👋</h1>
+    <p class="hero-subtitle">Security researcher, CTF player, and writeup author</p>
+    <p class="hero-description">I share what I learn from breaking into boxes and solving challenges. No fluff, just practical knowledge.</p>
+</section>
+
+<section class="recent-posts">
+    <h2 class="section-title">Recent Posts</h2>
+    <div class="posts-grid">
+        {% assign all_posts = site.writeups | concat: site.blog | sort: 'date' | reverse %}
+        {% for post in all_posts limit:6 %}
+        <article class="post-card">
+            <a href="{{ post.url | relative_url }}" class="post-link">
+                <div class="card-header">
+                    {% if post.platform %}
+                    <span class="card-tag">{{ post.platform }}</span>
+                    {% else %}
+                    <span class="card-tag">Blog</span>
+                    {% endif %}
+                    {% if post.difficulty %}
+                    <span class="badge-{{ post.difficulty | downcase }}">{{ post.difficulty }}</span>
+                    {% endif %}
+                </div>
+                <h3 class="card-title">{{ post.title }}</h3>
+                <p class="card-excerpt">{{ post.excerpt | strip_html | truncatewords: 20 }}</p>
+                <div class="card-footer">
+                    <span class="card-date">{{ post.date | date: "%b %d, %Y" }}</span>
+                    {% if post.readTime %}
+                    <span class="card-time">{{ post.readTime }}</span>
+                    {% endif %}
+                </div>
+            </a>
+        </article>
+        {% endfor %}
+    </div>
+</section>

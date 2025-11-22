@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+    {% seo %}
+</head>
+<body>
+    <!-- Sticky Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ '/' | relative_url }}" class="nav-brand">
+                <span class="brand-bracket">[</span>anfu<span class="brand-bracket">]</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="{{ '/' | relative_url }}" class="nav-link">Home</a></li>
+                <li><a href="{{ '/writeups/' | relative_url }}" class="nav-link">Writeups</a></li>
+                <li><a href="{{ '/blog/' | relative_url }}" class="nav-link">Blog</a></li>
+                <li><a href="{{ '/about/' | relative_url }}" class="nav-link">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        {{ content }}
+    </main>
+
+    <!-- Sticky Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text">anfu © 2025</p>
+            <p class="footer-subtext">Built with Jekyll • Powered by curiosity</p>
+        </div>
+    </footer>
+</body>
+</html>

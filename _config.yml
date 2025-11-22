@@ -1,0 +1,47 @@
+# Site settings
+title: "anfu"
+tagline: "CTFs, Writeups & Security Research"
+description: "Documenting my journey in CTFs, machines, and ethical hacking"
+author: "anfu"
+url: "https://anfu.github.io"
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+permalink: /:categories/:year/:month/:day/:title/
+
+# Collections
+collections:
+  blog:
+    output: true
+    permalink: /blog/:year/:month/:day/:title/
+  writeups:
+    output: true
+    permalink: /writeups/:year/:month/:day/:title/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "writeups"
+    values:
+      layout: "writeup"
+      category: "writeups"
+  - scope:
+      path: ""
+      type: "blog"
+    values:
+      layout: "post"
+      category: "blog"
+
+# Exclude
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag

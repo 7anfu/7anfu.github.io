@@ -1,0 +1,32 @@
+---
+layout: default
+title: Writeups
+permalink: /writeups/
+---
+
+<section class="page-header">
+    <h1 class="page-title">Machine Writeups</h1>
+    <p class="page-subtitle">Step-by-step walkthroughs of machines I've compromised</p>
+</section>
+
+<div class="writeups-grid">
+    {% for post in site.writeups reversed %}
+    <article class="writeup-card">
+        <a href="{{ post.url | relative_url }}" class="writeup-link">
+            <div class="writeup-header">
+                <span class="writeup-platform">{{ post.platform }}</span>
+                <span class="badge-{{ post.difficulty | downcase }}">{{ post.difficulty }}</span>
+            </div>
+            <h3 class="writeup-title">{{ post.title }}</h3>
+            <div class="writeup-meta">
+                <span class="writeup-os">{{ post.os }}</span>
+                <span class="writeup-specialty">{{ post.specialty }}</span>
+            </div>
+            <p class="writeup-excerpt">{{ post.excerpt | strip_html | truncatewords: 15 }}</p>
+            <div class="writeup-footer">
+                <span class="writeup-date">{{ post.date | date: "%B %d, %Y" }}</span>
+            </div>
+        </a>
+    </article>
+    {% endfor %}
+</div>
