@@ -884,3 +884,119 @@ body {
         font-size: 2rem;
     }
 }
+/* ============================================================================
+   NAVIGATION SOCIAL ICONS
+   ============================================================================ */
+
+.nav-content {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-social {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.social-icon {
+    color: var(--text-secondary);
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+}
+
+.social-icon:hover {
+    color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.social-icon svg {
+    display: block;
+}
+
+.social-icon img {
+    display: block;
+    filter: grayscale(100%) brightness(0.7);
+    transition: filter 0.2s ease;
+}
+
+.social-icon:hover img {
+    filter: grayscale(0%) brightness(1);
+}
+
+.social-icon-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ============================================================================
+   ABOUT PAGE SOCIAL LINKS
+   ============================================================================ */
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
+.social-link {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.social-link svg {
+    flex-shrink: 0;
+}
+
+.social-link:hover {
+    border-color: var(--border-light);
+    background-color: var(--bg-hover);
+    color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.social-link img {
+    flex-shrink: 0;
+    filter: grayscale(100%) brightness(0.8);
+    transition: filter 0.2s ease;
+}
+
+.social-link:hover img {
+    filter: grayscale(0%) brightness(1);
+}
+
+/* Responsive: hide text labels on mobile, keep icons */
+@media (max-width: 768px) {
+    .nav-social {
+        gap: 0.8rem;
+    }
+    
+    .nav-content {
+        gap: 1rem;
+    }
+    
+    .social-links {
+        flex-direction: column;
+    }
+    
+    .social-link {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
