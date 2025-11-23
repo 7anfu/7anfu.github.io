@@ -10,34 +10,28 @@ permalink: /about/
 
 <div class="about-content">
 
-I'm **anfu**, a cybersecurity enthusiast who loves breaking things to understand how they work.
+## Who I Am
 
-I spend most of my time playing CTFs, pwning boxes on platforms like HackTheBox and TryHackMe, and diving deep into attack techniques. This blog is where I document what I learn along the way.
+I'm **anfu**, a penetration tester working in cybersecurity and a computer engineering student with a deep passion for offensive security. My days are split between breaking into systems professionally and solving CTF challenges for fun.
 
-## What I Do
+## Why This Blog Exists
 
-- **Pentesting**: Web apps, Active Directory, privilege escalation
-- **CTFs**: Competing and solving challenges regularly
-- **Research**: Exploring new attack vectors and tools
-- **Teaching**: Sharing knowledge through writeups and guides
+Most security content falls into two categories: overly simplified tutorials or academic papers that are hard to follow. I wanted something in between.
 
-## Skills
+This blog aims to:
 
-- Web exploitation (SQLi, XSS, SSRF, deserialization)
-- Binary exploitation (buffer overflows, ROP chains)
-- Active Directory attacks (Kerberoasting, DCSync, GPO abuse)
-- Network pivoting and lateral movement
-- Linux/Windows privilege escalation
+- **Document real techniques** that work in actual assessments
+- **Explain the "why"** behind attacks, not just the "how"
+- **Write like a human**, not a corporate security vendor
+- **Share practical knowledge** from both professional work and CTF challenges
 
-## Why This Blog?
-
-Most writeups I read felt either too basic or too academic. I wanted something in between—technical enough to be useful, but written like you're explaining it to a friend over coffee.
-
-No corporate jargon. No SEO fluff. Just real techniques that actually work.
+No marketing fluff. No SEO keyword stuffing. Just technical content written by someone who does this work daily.
 
 </div>
 
 <h2 class="section-title">Get in Touch</h2>
+
+I'm always interested in connecting with other security enthusiasts, discussing techniques, or collaborating on projects.
 
 <div class="social-links">
 <a href="https://github.com/anfu" target="_blank" class="social-link">GitHub</a>
