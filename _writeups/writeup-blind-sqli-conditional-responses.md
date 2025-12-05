@@ -3,6 +3,7 @@ layout: writeup
 title: "PortSwigger Lab: Blind SQL Injection with Conditional Responses"
 platform: "PortSwigger"
 os: "web"
+difficulty: "Practitioner"
 date: 2025-12-05
 tags: [sql-injection, blind-sqli, web-security, portswigger, credential-extraction, python-automation]
 ---
