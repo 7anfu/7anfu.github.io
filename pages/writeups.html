@@ -4,29 +4,214 @@ title: Writeups
 permalink: /writeups/
 ---
 
-<section class="page-header">
-    <h1 class="page-title">Machine Writeups</h1>
-    <p class="page-subtitle">Step-by-step walkthroughs of machines I've compromised</p>
-</section>
+<div class="writeups-page">
+    <!-- Sidebar Navigation -->
+    <aside class="writeups-sidebar-nav">
+        <nav class="writeups-nav">
+            <!-- INTRO Section -->
+            <div class="nav-section">
+                <button class="nav-section-toggle active" data-section="intro">
+                    <span class="toggle-icon">▼</span>
+                    INTRO
+                </button>
+                <ul class="nav-section-list show">
+                    <li><a href="#welcome" class="nav-item active">📝 Welcome</a></li>
+                </ul>
+            </div>
 
-<div class="writeups-grid">
-    {% for post in site.writeups reversed %}
-    <article class="writeup-card">
-        <a href="{{ post.url | relative_url }}" class="writeup-link">
-            <div class="writeup-header">
-                <span class="writeup-platform">{{ post.platform }}</span>
-                <span class="badge-{{ post.difficulty | downcase }}">{{ post.difficulty }}</span>
+            <!-- PORTSWIGGER Section -->
+            <div class="nav-section">
+                <button class="nav-section-toggle" data-section="portswigger">
+                    <span class="toggle-icon">▶</span>
+                    PORTSWIGGER
+                </button>
+                <ul class="nav-section-list">
+                    {% assign portswigger_posts = site.writeups | where: "platform", "PortSwigger" %}
+                    {% for post in portswigger_posts reversed %}
+                    <li><a href="{{ post.url | relative_url }}" class="nav-item">
+                        <span class="nav-icon nav-icon--{{ post.difficulty | downcase }}">●</span>
+                        {{ post.title | truncate: 30 }}
+                    </a></li>
+                    {% endfor %}
+                </ul>
             </div>
-            <h3 class="writeup-title">{{ post.title }}</h3>
-            <div class="writeup-meta">
-                <span class="writeup-os">{{ post.os }}</span>
-                <span class="writeup-specialty">{{ post.specialty }}</span>
+
+            <!-- HACKTHEBOX Section -->
+            <div class="nav-section">
+                <button class="nav-section-toggle" data-section="hackthebox">
+                    <span class="toggle-icon">▶</span>
+                    HACKTHEBOX
+                </button>
+                <ul class="nav-section-list">
+                    {% assign htb_posts = site.writeups | where: "platform", "HackTheBox" %}
+                    {% for post in htb_posts reversed %}
+                    <li><a href="{{ post.url | relative_url }}" class="nav-item">
+                        <span class="nav-icon nav-icon--{{ post.difficulty | downcase }}">●</span>
+                        {{ post.title | truncate: 30 }}
+                    </a></li>
+                    {% endfor %}
+                </ul>
             </div>
-            <p class="writeup-excerpt">{{ post.excerpt | strip_html | truncatewords: 15 }}</p>
-            <div class="writeup-footer">
-                <span class="writeup-date">{{ post.date | date: "%B %d, %Y" }}</span>
+
+            <!-- TRYHACKME Section -->
+            <div class="nav-section">
+                <button class="nav-section-toggle" data-section="tryhackme">
+                    <span class="toggle-icon">▶</span>
+                    TRYHACKME
+                </button>
+                <ul class="nav-section-list">
+                    {% assign thm_posts = site.writeups | where: "platform", "TryHackMe" %}
+                    {% for post in thm_posts reversed %}
+                    <li><a href="{{ post.url | relative_url }}" class="nav-item">
+                        <span class="nav-icon nav-icon--{{ post.difficulty | downcase }}">●</span>
+                        {{ post.title | truncate: 30 }}
+                    </a></li>
+                    {% endfor %}
+                </ul>
             </div>
-        </a>
-    </article>
-    {% endfor %}
+
+            <!-- VULNHUB Section -->
+            <div class="nav-section">
+                <button class="nav-section-toggle" data-section="vulnhub">
+                    <span class="toggle-icon">▶</span>
+                    VULNHUB
+                </button>
+                <ul class="nav-section-list">
+                    {% assign vulnhub_posts = site.writeups | where: "platform", "VulnHub" %}
+                    {% for post in vulnhub_posts reversed %}
+                    <li><a href="{{ post.url | relative_url }}" class="nav-item">
+                        <span class="nav-icon nav-icon--{{ post.difficulty | downcase }}">●</span>
+                        {{ post.title | truncate: 30 }}
+                    </a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="writeups-main">
+        <!-- Breadcrumb -->
+        <nav class="writeups-breadcrumb">
+            <a href="{{ '/' | relative_url }}">Home</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="{{ '/writeups/' | relative_url }}">Writeups</a>
+            <span class="breadcrumb-separator">/</span>
+            <span>Intro</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Welcome</span>
+        </nav>
+
+        <!-- Page Title -->
+        <header class="writeups-header">
+            <h1 class="writeups-title">Welcome</h1>
+            <div class="writeups-meta-info">
+                <span class="meta-date">{{ site.time | date: "%B %d, %Y" }}</span>
+                <span class="meta-separator">•</span>
+                <span class="meta-read-time">1 minute</span>
+            </div>
+        </header>
+
+        <!-- Welcome Description -->
+        <div class="writeups-intro">
+            <p>Welcome to the writeups section. Here you'll find walkthroughs for labs and machines, both written and in video format, from platforms like <strong>PortSwigger</strong>, <strong>HackTheBox</strong>, <strong>TryHackMe</strong> and <strong>VulnHub</strong>.</p>
+        </div>
+
+        <!-- Statistics Section -->
+        <section class="writeups-stats">
+            <h2 class="stats-title">Writeup Statistics</h2>
+            
+            <!-- Platform Stats -->
+            <div class="stats-grid stats-grid--platforms">
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/platforms/hackthebox.png' | relative_url }}" alt="HackTheBox" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">HTB</div>
+                    <span class="stat-count">{% assign htb_count = site.writeups | where: "platform", "HackTheBox" | size %}{{ htb_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/platforms/tryhackme.png' | relative_url }}" alt="TryHackMe" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">THM</div>
+                    <span class="stat-count">{% assign thm_count = site.writeups | where: "platform", "TryHackMe" | size %}{{ thm_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/platforms/portswigger.png' | relative_url }}" alt="PortSwigger" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">PS</div>
+                    <span class="stat-count">{% assign ps_count = site.writeups | where: "platform", "PortSwigger" | size %}{{ ps_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/platforms/vulnhub.png' | relative_url }}" alt="VulnHub" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">VH</div>
+                    <span class="stat-count">{% assign vh_count = site.writeups | where: "platform", "VulnHub" | size %}{{ vh_count }}</span>
+                </div>
+            </div>
+
+            <!-- OS Stats -->
+            <div class="stats-grid stats-grid--os">
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/os/windows.png' | relative_url }}" alt="Windows" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">🪟</div>
+                    <span class="stat-count">{% assign win_count = site.writeups | where: "os", "Windows" | size %}{{ win_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/os/linux.png' | relative_url }}" alt="Linux" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">🐧</div>
+                    <span class="stat-count">{% assign linux_count = site.writeups | where: "os", "Linux" | size %}{{ linux_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <img src="{{ '/assets/images/os/web.png' | relative_url }}" alt="Web" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;">🌐</div>
+                    <span class="stat-count">{% assign web_count = site.writeups | where: "os", "Web" | size %}{{ web_count }}</span>
+                </div>
+            </div>
+
+            <!-- Difficulty Stats -->
+            <div class="stats-grid stats-grid--difficulty">
+                <div class="stat-item stat-item--difficulty">
+                    <span class="difficulty-bar difficulty-bar--easy"></span>
+                    <span class="difficulty-label">Easy</span>
+                    <span class="stat-count">{% assign easy_count = site.writeups | where: "difficulty", "Easy" | size %}{{ easy_count }}</span>
+                </div>
+                <div class="stat-item stat-item--difficulty">
+                    <span class="difficulty-bar difficulty-bar--medium"></span>
+                    <span class="difficulty-label">Medium</span>
+                    <span class="stat-count">{% assign medium_count = site.writeups | where: "difficulty", "Medium" | size %}{{ medium_count }}</span>
+                </div>
+                <div class="stat-item stat-item--difficulty">
+                    <span class="difficulty-bar difficulty-bar--hard"></span>
+                    <span class="difficulty-label">Hard</span>
+                    <span class="stat-count">{% assign hard_count = site.writeups | where: "difficulty", "Hard" | size %}{{ hard_count }}</span>
+                </div>
+                <div class="stat-item stat-item--difficulty">
+                    <span class="difficulty-bar difficulty-bar--insane"></span>
+                    <span class="difficulty-label">Insane</span>
+                    <span class="stat-count">{% assign insane_count = site.writeups | where: "difficulty", "Insane" | size %}{{ insane_count }}</span>
+                </div>
+                <div class="stat-item stat-item--difficulty">
+                    <span class="difficulty-bar difficulty-bar--practitioner"></span>
+                    <span class="difficulty-label">Practitioner</span>
+                    <span class="stat-count">{% assign practitioner_count = site.writeups | where: "difficulty", "Practitioner" | size %}{{ practitioner_count }}</span>
+                </div>
+            </div>
+
+            <!-- Total -->
+            <div class="stats-total">
+                <span>Total: <strong>{{ site.writeups | size }}</strong></span>
+            </div>
+        </section>
+    </main>
 </div>
+
+<script>
+// Toggle navigation sections
+document.querySelectorAll('.nav-section-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+        const section = button.parentElement;
+        const list = section.querySelector('.nav-section-list');
+        const icon = button.querySelector('.toggle-icon');
+        
+        button.classList.toggle('active');
+        list.classList.toggle('show');
+        icon.textContent = list.classList.contains('show') ? '▼' : '▶';
+    });
+});
+</script>
