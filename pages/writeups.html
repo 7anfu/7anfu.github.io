@@ -124,7 +124,7 @@ permalink: /writeups/
             <!-- Platform Stats -->
             <div class="stats-grid stats-grid--platforms">
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/hackthebox.png' | relative_url }}" alt="HackTheBox" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ '/assets/images/platforms/hackthebox.jpg' | relative_url }}" alt="HackTheBox" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">HTB</div>
                     <span class="stat-count">{% assign htb_count = site.writeups | where: "platform", "HackTheBox" | size %}{{ htb_count }}</span>
                 </div>
@@ -134,12 +134,12 @@ permalink: /writeups/
                     <span class="stat-count">{% assign thm_count = site.writeups | where: "platform", "TryHackMe" | size %}{{ thm_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/portswigger.png' | relative_url }}" alt="PortSwigger" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ '/assets/images/platforms/portswigger.jpg' | relative_url }}" alt="PortSwigger" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">PS</div>
                     <span class="stat-count">{% assign ps_count = site.writeups | where: "platform", "PortSwigger" | size %}{{ ps_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/vulnhub.png' | relative_url }}" alt="VulnHub" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ '/assets/images/platforms/vulnhub.jpg' | relative_url }}" alt="VulnHub" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">VH</div>
                     <span class="stat-count">{% assign vh_count = site.writeups | where: "platform", "VulnHub" | size %}{{ vh_count }}</span>
                 </div>
