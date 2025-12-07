@@ -124,22 +124,22 @@ permalink: /writeups/
             <!-- Platform Stats -->
             <div class="stats-grid stats-grid--platforms">
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/hackthebox.jpg' | relative_url }}" alt="HackTheBox" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="/assets/css/platforms/hackthebox.jpg" alt="HackTheBox" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">HTB</div>
                     <span class="stat-count">{% assign htb_count = site.writeups | where: "platform", "HackTheBox" | size %}{{ htb_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/tryhackme.png' | relative_url }}" alt="TryHackMe" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="/assets/css/platforms/tryhackme.jpg" alt="TryHackMe" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">THM</div>
                     <span class="stat-count">{% assign thm_count = site.writeups | where: "platform", "TryHackMe" | size %}{{ thm_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/portswigger.jpg' | relative_url }}" alt="PortSwigger" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="/assets/css/platforms/portswigger.jpg" alt="PortSwigger" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">PS</div>
                     <span class="stat-count">{% assign ps_count = site.writeups | where: "platform", "PortSwigger" | size %}{{ ps_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/platforms/vulnhub.jpg' | relative_url }}" alt="VulnHub" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="/assets/css/platforms/vulnhub.jpg" alt="VulnHub" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="stat-icon-placeholder" style="display:none;">VH</div>
                     <span class="stat-count">{% assign vh_count = site.writeups | where: "platform", "VulnHub" | size %}{{ vh_count }}</span>
                 </div>
@@ -148,18 +148,18 @@ permalink: /writeups/
             <!-- OS Stats -->
             <div class="stats-grid stats-grid--os">
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/os/windows.png' | relative_url }}" alt="Windows" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="stat-icon-placeholder" style="display:none;">🪟</div>
+                    <img src="/assets/os/windows.png" alt="Windows" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;"></div>
                     <span class="stat-count">{% assign win_count = site.writeups | where: "os", "Windows" | size %}{{ win_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/os/linux.png' | relative_url }}" alt="Linux" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="stat-icon-placeholder" style="display:none;">🐧</div>
+                    <img src="/assets/os/linux.png" alt="Linux" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;"></div>
                     <span class="stat-count">{% assign linux_count = site.writeups | where: "os", "Linux" | size %}{{ linux_count }}</span>
                 </div>
                 <div class="stat-item">
-                    <img src="{{ '/assets/images/os/web.png' | relative_url }}" alt="Web" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="stat-icon-placeholder" style="display:none;">🌐</div>
+                    <img src="/assets/os/web.png" alt="Web" class="stat-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="stat-icon-placeholder" style="display:none;"></div>
                     <span class="stat-count">{% assign web_count = site.writeups | where: "os", "Web" | size %}{{ web_count }}</span>
                 </div>
             </div>
