@@ -15,7 +15,7 @@ excerpt: "Exploiting XWiki SolrSearch Groovy injection for RCE, credential reuse
 
 ## Summary
 
-Editor is a medium-difficulty Linux machine featuring an XWiki instance vulnerable to unauthenticated Remote Code Execution (CVE-2025-24893). Initial access is obtained through Groovy code injection in the SolrSearch endpoint. Privilege escalation to user involves extracting MySQL credentials from XWiki's configuration files, which are reused for SSH access. Root is achieved by exploiting CVE-2024-32019, a PATH hijacking vulnerability in Netdata's ndsudo SUID binary.
+Editor is a easy-difficulty Linux machine featuring an XWiki instance vulnerable to unauthenticated Remote Code Execution (CVE-2025-24893). Initial access is obtained through Groovy code injection in the SolrSearch endpoint. Privilege escalation to user involves extracting MySQL credentials from XWiki's configuration files, which are reused for SSH access. Root is achieved by exploiting CVE-2024-32019, a PATH hijacking vulnerability in Netdata's ndsudo SUID binary.
 
 ---
 
