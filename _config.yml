@@ -9,11 +9,11 @@ theme: jekyll-theme-chirpy
 lang: en
 timezone: Europe/Madrid
 
-title: Anfu's Blog
-tagline: "Writeups, Offensive Security & CTF Notes"
+title: anfu's site
+tagline: "Offensive Security"
 description: >-
   CTF writeups, offensive security research,
-  and red team techniques by Anfu.
+  and red team techniques by anfu.
 
 # Site URL (no trailing slash)
 url: "https://7anfu.github.io"
