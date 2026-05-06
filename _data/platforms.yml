@@ -1,0 +1,27 @@
+SoterCTF:
+  name: SoterCTF
+  logo: /assets/img/platforms/soterctf.png
+
+HackTheBox:
+  name: HackTheBox
+  logo: /assets/img/platforms/hackthebox-logo.png
+
+TryHackMe:
+  name: TryHackMe
+  logo: /assets/img/platforms/tryhackme.png
+
+HackMyVM:
+  name: HackMyVM
+  logo: /assets/img/platforms/hackmyvm-logo.png
+
+PicoCTF:
+  name: PicoCTF
+  logo: /assets/img/platforms/picoctf.png
+
+PortSwigger:
+  name: PortSwigger
+  logo: /assets/img/platforms/portswigger.png
+
+VulnHub:
+  name: VulnHub
+  logo: /assets/img/platforms/vulnhub.png

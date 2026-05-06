@@ -1,0 +1,19 @@
+# Chirpy sidebar links
+# Each entry renders as an icon in the lower sidebar
+
+- type: github
+  icon: "fab fa-github"
+  url: "https://github.com/7anfu"
+
+- type: linkedin
+  icon: "fab fa-linkedin"
+  url: "https://www.linkedin.com/in/marc-peric%C3%A0s-8336ba180/"
+
+# - type: email
+#   icon: "fas fa-envelope"
+#   noblank: true
+#   url: "mailto:example@example.com"
+
+# - type: rss
+#   icon: "fas fa-rss"
+#   url: /feed.xml

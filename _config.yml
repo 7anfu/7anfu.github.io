@@ -1,0 +1,120 @@
+# ===========================================
+# Main blog configuration
+# Theme: jekyll-theme-chirpy
+# ===========================================
+
+theme: jekyll-theme-chirpy
+
+# --- Site information ---
+lang: en
+timezone: Europe/Madrid
+
+title: Anfu's Blog
+tagline: "Writeups, Offensive Security & CTF Notes"
+description: >-
+  CTF writeups, offensive security research,
+  and red team techniques by Anfu.
+
+# Site URL (no trailing slash)
+url: "https://7anfu.github.io"
+baseurl: ""
+
+# --- Author / GitHub / Social ---
+github:
+  username: 7anfu
+
+social:
+  name: Anfu
+  links:
+    - https://github.com/7anfu
+    - https://www.linkedin.com/in/marc-peric%C3%A0s-8336ba180/
+
+# --- Search ---
+search: true
+
+# --- Theme (light/dark) ---
+# Options: light, dark, empty (follows system)
+theme_mode:
+
+# --- Avatar ---
+avatar: /assets/img/avatar.jpg
+
+# --- SEO ---
+social_preview_image:
+
+# --- Comments (optional, uncomment and configure) ---
+# comments:
+#   provider: giscus
+#   giscus:
+#     repo: 7anfu/TODO_REPO
+#     repo_id: TODO
+#     category: Announcements
+#     category_id: TODO
+#     mapping: pathname
+#     reactions_enabled: '1'
+#     input_position: bottom
+
+# --- TOC in posts ---
+toc: true
+
+# --- Pagination ---
+paginate: 10
+
+# --- Permalinks ---
+permalink: /posts/:title/
+
+# --- Markdown / syntax ---
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true
+      start_line: 1
+
+# --- Frontmatter defaults ---
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      comments: true
+      toc: true
+      math: false
+      mermaid: false
+  - scope:
+      path: _tabs
+    values:
+      layout: page
+      permalink: /:title/
+
+# --- Collections ---
+collections:
+  tabs:
+    output: true
+    sort_by: order
+
+# --- Exclude from build ---
+exclude:
+  - "*.gem"
+  - "*.gemspec"
+  - tools
+  - README.md
+  - LICENSE
+  - "*.config.js"
+  - package*.json
+  - TAXONOMY.md
+
+jekyll-archives:
+  enabled: [categories, tags]
+  layouts:
+    category: category
+    tag: tag
+  permalinks:
+    tag: /tags/:name/
+    category: /categories/:name/
