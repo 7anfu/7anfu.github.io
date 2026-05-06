@@ -60,6 +60,15 @@ toc: true
 # --- Pagination ---
 paginate: 10
 
+# --- Plugins (declared so Jekyll on GH Actions loads them) ---
+plugins:
+  - jekyll-paginate
+  - jekyll-redirect-from
+  - jekyll-seo-tag
+  - jekyll-archives
+  - jekyll-sitemap
+  - jekyll-include-cache
+
 # --- Permalinks ---
 permalink: /posts/:title/
 

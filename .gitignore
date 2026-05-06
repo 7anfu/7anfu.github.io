@@ -7,7 +7,7 @@ _site/
 vendor/
 
 # Ruby
-Gemfile.lock
+# (Gemfile.lock is committed for reproducible builds on GitHub Actions)
 
 # OS
 .DS_Store
